@@ -3,6 +3,8 @@
 /.settings/
 /.vscode/
 /.smarttomcat/
+/AZURE_DEPLOYMENT.md
+/CI_CD_SETUP.md
 
 # Build output
 /target/
