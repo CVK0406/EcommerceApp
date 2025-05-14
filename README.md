@@ -10,6 +10,7 @@ Before you begin, ensure you have the following installed:
 - MySQL Server 8.0 or higher
 - Apache Tomcat 9.0 or higher
 - Git
+- Azure CLI (for cloud deployment)
 
 ## Project Setup
 
@@ -50,6 +51,9 @@ EcommerceApp/
 ├── target/                 # Compiled files
 ├── pom.xml                 # Maven configuration
 ├── init.sql                # Database initialization script
+├── .github/               # GitHub Actions workflows
+│   └── workflows/
+│       └── azure-deploy.yml
 ```
 
 ## Features
@@ -61,6 +65,8 @@ EcommerceApp/
 - Category and Brand Management
 - Admin Dashboard
 - Responsive Design
+- Automated CI/CD Pipeline
+- Azure Cloud Deployment
 
 ## Dependencies
 
@@ -89,6 +95,15 @@ The project uses the following main dependencies:
    - Start Tomcat server
    - Access the application at `http://localhost:8080/EcommerceApp`
 
+## Deployment
+
+### Local Deployment
+Follow the steps in the Project Setup section above.
+
+### Azure Cloud Deployment
+1. **Automated Deployment**
+   - The application is automatically deployed to Azure when changes are pushed to the main branch
+
 ## Contributing
 
 1. Fork the repository
@@ -103,4 +118,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Support
 
-For support, please open an issue in the repository or contact the development team. 
+For support, please open an issue in the repository or contact the development team.
