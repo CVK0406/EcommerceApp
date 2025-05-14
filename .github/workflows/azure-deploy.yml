@@ -3,12 +3,22 @@ name: Build and Deploy Code Updates to Azure (No Tests, No DB Re-init)
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'src/**'        # Any file under the src directory
+      - 'pom.xml'       # Changes to your Maven build file
+      - '.github/workflows/**' # Also trigger on workflow changes
+  pull_request: # Build on PRs to main if code changes, but don't deploy
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+      - '.github/workflows/**'
 
 env:
-  AZURE_WEBAPP_NAME: cvk-ecommerce-app         # Your existing Web App name
-  AZURE_WEBAPP_PACKAGE_PATH: 'target/EcommerceApp.war' # Specific path to your WAR file
+  AZURE_WEBAPP_NAME: cvk-ecommerce-app
+  AZURE_WEBAPP_PACKAGE_PATH: 'target/EcommerceApp.war'
   JAVA_VERSION: '8'
-  RESOURCE_GROUP: 'ecommerce-rg'             
+  RESOURCE_GROUP: 'ecommerce-rg'
 
 jobs:
   build-and-deploy:
@@ -26,19 +36,18 @@ jobs:
         cache: 'maven'
 
     - name: Build with Maven
-      run: mvn clean package -B -DskipTests # Skip tests
+      run: mvn clean package -B -DskipTests
 
-    # Only proceed to deploy if on the main branch
-    - name: Deploy to Azure Web App
-      if: github.ref == 'refs/heads/main'
+    # Deployment steps - only run for pushes to the main branch
+    - name: Login to Azure
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: azure/login@v1 
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - run: | # This run step is part of the Deploy step if AZURE_CREDENTIALS is used
-        # Deploy using Azure Web Apps Deploy action
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-          # publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }} # Option 1: Use publish profile
-          # If not using publish-profile, ensure AZURE_CREDENTIALS service principal has deployment rights
+
+    - name: Deploy to Azure Web App
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
