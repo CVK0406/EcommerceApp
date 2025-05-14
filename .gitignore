@@ -1,6 +1,22 @@
-/.idea
-/.settings
-/.smarttomcat
-/.vscode
-/target
-/AZURE_DEPLOYMENT.md
+# IDE and editor specific files
+/.idea/
+/.settings/
+/.vscode/
+/.smarttomcat/
+
+# Build output
+/target/
+
+# Local environment files (if any, add as needed)
+# e.g., .env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+*.log.*
+
+# Temporary files
+*.tmp
