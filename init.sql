@@ -217,17 +217,3 @@ CREATE INDEX idx_order_details_name ON order_details(Name);
 CREATE INDEX idx_product_brand_category ON product(bid, cid);
 CREATE INDEX idx_customer_contact ON customer(Contact_No);
 CREATE INDEX idx_cart_updated_name ON cart(updated_at, Name);
-
--- Set up event scheduler for maintenance (Azure MySQL compatible)
-SET GLOBAL event_scheduler = ON;
-
-DELIMITER //
-
-CREATE EVENT IF NOT EXISTS cleanup_old_carts
-ON SCHEDULE EVERY 1 DAY
-DO
-BEGIN
-    DELETE FROM cart WHERE updated_at < DATE_SUB(NOW(), INTERVAL 30 DAY);
-END //
-
-DELIMITER ;
