@@ -17,14 +17,13 @@ on:
 env:
   AZURE_WEBAPP_NAME: cvk-ecommerce-app
   AZURE_STAGING_SLOT_NAME: staging 
-  AZURE_WEBAPP_PACKAGE_PATH: 'target/ROOT.war'
+  AZURE_WEBAPP_PACKAGE_PATH: 'target/ROOT.war' 
   JAVA_VERSION: '8'
   RESOURCE_GROUP: 'ecommerce-rg'
-  ORIGINAL_WAR_NAME: 'EcommerceApp.war' 
 
 jobs:
   build-and-deploy-to-staging:
-    name: Build, Rename, and Deploy to Staging
+    name: Build and Deploy ROOT.war to Staging
     runs-on: ubuntu-latest
     
     steps:
@@ -38,15 +37,10 @@ jobs:
         distribution: 'temurin' 
         cache: 'maven'
 
-    - name: Build with Maven (Skipping Tests)
+    - name: Build ROOT.war with Maven (Skipping Tests)
       run: mvn clean package -B -DskipTests
 
-    - name: Rename WAR to ROOT.war for root context deployment
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      run: mv target/${{ env.ORIGINAL_WAR_NAME }} target/ROOT.war
-
     # --- Deployment to Staging Slot ---
-    # These steps only run for pushes to the main branch.
     - name: Login to Azure
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: azure/login@v1 
@@ -69,5 +63,5 @@ jobs:
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
           --slot ${{ env.AZURE_STAGING_SLOT_NAME }} \
-          --target-slot production # 'production' is the keyword for the main (production) slot
+          --target-slot production
         echo "Swap initiated. Verify production deployment."
