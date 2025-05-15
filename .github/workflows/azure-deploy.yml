@@ -1,4 +1,4 @@
-name: Build and Deploy Code Updates to Azure (No Tests, No DB Re-init)
+name: Build and Deploy to Staging Slot (Blue/Green)
 
 on:
   push:
@@ -16,12 +16,13 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: cvk-ecommerce-app
-  AZURE_WEBAPP_PACKAGE_PATH: 'target/EcommerceApp.war'
+  AZURE_STAGING_SLOT_NAME: staging # Define the name of your staging slot
+  AZURE_WEBAPP_PACKAGE_PATH: 'target/EcommerceApp.war' # Assumes finalName in pom.xml is EcommerceApp
   JAVA_VERSION: '8'
   RESOURCE_GROUP: 'ecommerce-rg'
 
 jobs:
-  build-and-deploy:
+  build-and-deploy-to-staging: # Job name updated for clarity
     runs-on: ubuntu-latest
     
     steps:
@@ -35,7 +36,7 @@ jobs:
         distribution: 'temurin' 
         cache: 'maven'
 
-    - name: Build with Maven
+    - name: Build with Maven (Skipping Tests)
       run: mvn clean package -B -DskipTests
 
     # Deployment steps - only run for pushes to the main branch
@@ -43,11 +44,24 @@ jobs:
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: azure/login@v1 
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        creds: ${{ secrets.AZURE_CREDENTIALS }} # Ensure this SP has permissions for slot deployment
 
-    - name: Deploy to Azure Web App
+    - name: Deploy to Azure Web App Staging Slot
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        slot-name: ${{ env.AZURE_STAGING_SLOT_NAME }} # Deploy to the staging slot
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_STAGING }}
+
+    - name: Swap Staging Slot to Production
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main' # And previous steps succeeded
+      run: |
+        echo "Attempting to swap slot '${{ env.AZURE_STAGING_SLOT_NAME }}' to production for webapp '${{ env.AZURE_WEBAPP_NAME }}'..."
+        az webapp deployment slot swap \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --slot ${{ env.AZURE_STAGING_SLOT_NAME }} \
+          --target-slot production # 'production' is the keyword for the main slot
+        echo "Swap initiated."
