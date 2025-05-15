@@ -1,4 +1,4 @@
-name: Build and Deploy to Staging Slot (Blue/Green)
+name: Build and Deploy to Staging Slot (Blue/Green with Root Context)
 
 on:
   push:
@@ -16,14 +16,15 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: cvk-ecommerce-app
-  AZURE_STAGING_SLOT_NAME: staging # Name of your staging slot
-  AZURE_WEBAPP_PACKAGE_PATH: 'target/EcommerceApp.war' # Specific WAR file name
+  AZURE_STAGING_SLOT_NAME: staging 
+  AZURE_WEBAPP_PACKAGE_PATH: 'target/ROOT.war'
   JAVA_VERSION: '8'
   RESOURCE_GROUP: 'ecommerce-rg'
+  ORIGINAL_WAR_NAME: 'EcommerceApp.war' 
 
 jobs:
   build-and-deploy-to-staging:
-    name: Build and Deploy to Staging
+    name: Build, Rename, and Deploy to Staging
     runs-on: ubuntu-latest
     
     steps:
@@ -40,29 +41,33 @@ jobs:
     - name: Build with Maven (Skipping Tests)
       run: mvn clean package -B -DskipTests
 
+    - name: Rename WAR to ROOT.war for root context deployment
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: mv target/${{ env.ORIGINAL_WAR_NAME }} target/ROOT.war
+
     # --- Deployment to Staging Slot ---
     # These steps only run for pushes to the main branch.
     - name: Login to Azure
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: azure/login@v1 
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }} # Service Principal for all Azure actions
+        creds: ${{ secrets.AZURE_CREDENTIALS }} 
 
-    - name: Deploy to Azure Web App Staging Slot
+    - name: Deploy ROOT.war to Azure Web App Staging Slot
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        slot-name: ${{ env.AZURE_STAGING_SLOT_NAME }} # Deploy to the staging slot
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        slot-name: ${{ env.AZURE_STAGING_SLOT_NAME }} 
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }} 
 
-    # - name: Swap Staging Slot to Production
-    #   if: github.event_name == 'push' && github.ref == 'refs/heads/main' # && success() if you add test steps after deploy to staging
-    #   run: |
-    #     echo "Attempting to swap slot '${{ env.AZURE_STAGING_SLOT_NAME }}' to production for webapp '${{ env.AZURE_WEBAPP_NAME }}'..."
-    #     az webapp deployment slot swap \
-    #       --resource-group ${{ env.RESOURCE_GROUP }} \
-    #       --name ${{ env.AZURE_WEBAPP_NAME }} \
-    #       --slot ${{ env.AZURE_STAGING_SLOT_NAME }} \
-    #       --target-slot production # 'production' is the keyword for the main (production) slot
-    #     echo "Swap initiated. Verify production deployment."
+    - name: Swap Staging Slot to Production
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main' # && success()
+      run: |
+        echo "Attempting to swap slot '${{ env.AZURE_STAGING_SLOT_NAME }}' to production for webapp '${{ env.AZURE_WEBAPP_NAME }}'..."
+        az webapp deployment slot swap \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --slot ${{ env.AZURE_STAGING_SLOT_NAME }} \
+          --target-slot production # 'production' is the keyword for the main (production) slot
+        echo "Swap initiated. Verify production deployment."
