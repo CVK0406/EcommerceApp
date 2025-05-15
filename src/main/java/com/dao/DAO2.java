@@ -132,19 +132,20 @@ public class DAO2 {
 		
 		public List<viewlist> getSelecteditem(String st){
 			List<viewlist> listv = new ArrayList<viewlist>();
-			
 			viewlist v = null;
-			
+			long startTime = 0;
+			long endTime = 0;
+
 			try {
 				String sql = "select * from viewlist where pname = ?";
+				
+				startTime = System.currentTimeMillis(); // CAPTURE START TIME
+				
 				PreparedStatement ps = conn.prepareStatement(sql);
-				
 				ps.setString(1, st);
-				
 				ResultSet rs = ps.executeQuery();
-				
-				while(rs.next())
-				{
+
+				while(rs.next()) {
 					v = new viewlist();
 					v.setBname(rs.getString(1));
 					v.setCname(rs.getString(2));
@@ -154,8 +155,13 @@ public class DAO2 {
 					v.setPimage(rs.getString(6));
 					listv.add(v);
 				}
+
 			} catch (Exception e) {
 				e.printStackTrace();
+			} finally {
+				endTime = System.currentTimeMillis(); // CAPTURE END TIME
+				long duration = endTime - startTime;
+				System.out.println("getSelecteditem query (pname: " + st + ") took: " + duration + " ms. Start: " + startTime + ", End: " + endTime); // LOG DURATION
 			}
 			return listv;
 		}
